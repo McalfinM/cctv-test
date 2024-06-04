@@ -26,11 +26,10 @@ import MainCard from 'components/MainCard';
 
 // SWR for data fetching
 import useSWR from 'swr';
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
+import { get } from 'services';
 
 export default function User({ baseUrl }) {
-  const { data: users, error, mutate } = useSWR(baseUrl + '/users', fetcher);
+  const { data: users, error, mutate } = useSWR(baseUrl + '/users', get);
 
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);

@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -32,6 +32,8 @@ import FirebaseSocial from './FirebaseSocial';
 // ============================|| JWT - LOGIN ||============================ //
 
 export default function AuthLogin({ isDemo = false }) {
+  const navigate = useNavigate();
+
   const [checked, setChecked] = React.useState(false);
 
   const [showPassword, setShowPassword] = React.useState(false);
@@ -47,19 +49,19 @@ export default function AuthLogin({ isDemo = false }) {
     <>
       <Formik
         initialValues={{
-          email: '',
+          username: '',
           password: '',
           submit: null
         }}
         validationSchema={Yup.object().shape({
-          email: Yup.string().email('Must be a valid email').max(50).required('Email is required'),
+          username: Yup.string().max(50).required('Username is required'),
           password: Yup.string().max(50).required('Password is required')
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
-            // Perform authentication logic here, such as sending the email and password to a server for validation
+            // Perform authentication logic here, such as sending the username and password to a server for validation
             // Example:
-            const response = await fetch(import.meta.env.VITE_APP_BASE_URL + '/login', {
+            const response = await fetch(import.meta.env.VITE_APP_BASE_URL + '/api/auth/login', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -67,14 +69,21 @@ export default function AuthLogin({ isDemo = false }) {
               body: JSON.stringify(values)
             });
 
+            // Parse the response as JSON
+
             if (!response.ok) {
               const errorData = await response.json();
               throw new Error(errorData.message);
             }
 
             // If authentication is successful, you can redirect the user or perform other actions
+            const responseData = await response.json();
+            localStorage.setItem('user', JSON.stringify(responseData));
             // Example:
             setStatus({ success: true });
+            navigate('/dashboard');
+
+            // localStorage.setItem('token');
           } catch (error) {
             // If there is an error during authentication, display error messages
             setErrors({ submit: error.message });
@@ -89,22 +98,21 @@ export default function AuthLogin({ isDemo = false }) {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Stack spacing={1}>
-                  <InputLabel htmlFor="email-login">Email Address</InputLabel>
+                  <InputLabel htmlFor="username-login">username Address</InputLabel>
                   <OutlinedInput
-                    id="email-login"
-                    type="email"
-                    value={values.email}
-                    name="email"
+                    id="username-login"
+                    value={values.username}
+                    name="username"
                     onBlur={handleBlur}
                     onChange={handleChange}
-                    placeholder="Enter email address"
+                    placeholder="Enter username address"
                     fullWidth
-                    error={Boolean(touched.email && errors.email)}
+                    error={Boolean(touched.username && errors.username)}
                   />
                 </Stack>
-                {touched.email && errors.email && (
-                  <FormHelperText error id="standard-weight-helper-text-email-login">
-                    {errors.email}
+                {touched.username && errors.username && (
+                  <FormHelperText error id="standard-weight-helper-text-username-login">
+                    {errors.username}
                   </FormHelperText>
                 )}
               </Grid>

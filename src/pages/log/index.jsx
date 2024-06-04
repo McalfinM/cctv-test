@@ -27,11 +27,10 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
+import { get } from 'services';
 
 export default function Log({ baseUrl }) {
-  const { data: logs, error, mutate } = useSWR(baseUrl + '/logs', fetcher);
+  const { data: logs, error, mutate } = useSWR(baseUrl + '/logs', get);
 
   const [open, setOpen] = useState(false);
   const [editingLog, setEditingLog] = useState(null);

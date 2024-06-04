@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // material-ui
 import Grid from '@mui/material/Grid';
@@ -8,10 +8,22 @@ import Typography from '@mui/material/Typography';
 // project import
 import AuthWrapper from './AuthWrapper';
 import AuthLogin from './auth-forms/AuthLogin';
+import { useEffect } from 'react';
 
 // ================================|| LOGIN ||================================ //
 
 export default function Login() {
+  let user = localStorage.getItem('user');
+  let token = user ? JSON.parse(user)?.token : '';
+  console.log('🚀 ~ file: login.jsx:17 ~ Login ~ token:', token);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (token) navigate('/dashboard');
+
+    return () => {};
+  }, []);
+
   return (
     <AuthWrapper>
       <Grid container spacing={3}>

@@ -27,11 +27,10 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
+import { get } from 'services';
 
 export default function EventPage({ baseUrl }) {
-  const { data: events, error, mutate } = useSWR(baseUrl + '/events', fetcher);
+  const { data: events, error, mutate } = useSWR(baseUrl + 'api/events', get);
 
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
