@@ -27,7 +27,6 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { post } from 'services';
 
 export default function EventPage({ baseUrl }) {
   const { data: events, error, mutate } = useSWR();
@@ -39,8 +38,8 @@ export default function EventPage({ baseUrl }) {
   const [eventMock, setEventMock] = useState([]);
 
   useEffect(() => {
-    if(events){
-      setEventMock(events.data)
+    if (events) {
+      setEventMock(events.data);
     }
   }, [events]);
 

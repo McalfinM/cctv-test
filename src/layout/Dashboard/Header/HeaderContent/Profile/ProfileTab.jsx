@@ -14,6 +14,7 @@ import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
 import WalletOutlined from '@ant-design/icons/WalletOutlined';
 import { useNavigate } from 'react-router';
+import Storage from 'utils/storage';
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -26,9 +27,8 @@ export default function ProfileTab() {
     setSelectedIndex(index);
   };
 
-  const handleLogout = (index) => {
-    localStorage.clear();
-    navigate('/login');
+  const handleLogout = () => {
+    Storage.clear(navigate);
   };
 
   return (

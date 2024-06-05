@@ -28,6 +28,7 @@ import AnimateButton from 'components/@extended/AnimateButton';
 import EyeOutlined from '@ant-design/icons/EyeOutlined';
 import EyeInvisibleOutlined from '@ant-design/icons/EyeInvisibleOutlined';
 import FirebaseSocial from './FirebaseSocial';
+import Storage from 'utils/storage';
 
 // ============================|| JWT - LOGIN ||============================ //
 
@@ -78,10 +79,10 @@ export default function AuthLogin({ isDemo = false }) {
 
             // If authentication is successful, you can redirect the user or perform other actions
             const responseData = await response.json();
-            localStorage.setItem('user', JSON.stringify(responseData));
-            // Example:
+            Storage.set('user', responseData);
             setStatus({ success: true });
-            navigate('/dashboard');
+            // navigate('/dashboard');
+            Storage.get('user');
 
             // localStorage.setItem('token');
           } catch (error) {

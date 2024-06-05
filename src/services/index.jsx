@@ -23,7 +23,7 @@ const getData = async (url) => {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     }
   });
 
@@ -57,4 +57,10 @@ const post = async (url, data) => {
   return response.json();
 };
 
-export { get, post, getData };
+const api = {
+  get,
+  post,
+  getData
+};
+
+export default api;
