@@ -28,10 +28,10 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { get } from 'services';
+import { getData } from 'services';
 
 export default function Integration({ baseUrl }) {
-  const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration', get);
+  const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', getData);
 
   const [open, setOpen] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -40,24 +40,13 @@ export default function Integration({ baseUrl }) {
   const [cameraName, setCameraName] = useState('');
   const [rtspURL, setRtspURL] = useState('');
   const [panelId, setPanelId] = useState('');
-  const [integrationMock, setIntegrationMock] = useState();
+  const [integrationMock, setIntegrationMock] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setIntegrationMock([
-        {
-          id: 1,
-          cameraName: 'Camera Dimana mana',
-          rtspURL: 'rtsp://rtspstream:b984c9fba7e12a09f419b4f0b71d2d2d@zephyr.rtsp.stream/pattern',
-          panelId: 1,
-          doorId: null,
-          idCard: null,
-          readerId: null
-        }
-      ]);
-    }, 500);
-    return () => {};
-  }, []);
+    if (integration) {
+      setIntegrationMock(integration.integrations);
+    }
+  }, [integration]);
 
   const handleClickOpen = (integration) => {
     setEditingIntegration(integration);
@@ -88,18 +77,23 @@ export default function Integration({ baseUrl }) {
   const handleSave = async () => {
     if (editingIntegration) {
       // Update integration
-      await fetch(baseUrl + '/integration/' + editingIntegration.id, {
+      await fetch(baseUrl + '/api/integration/' + editingIntegration.id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cameraName, rtspURL, panelId })
       });
     } else {
       // Create new integration
-      await fetch(baseUrl + '/integration', {
+      const auth = JSON.parse(localStorage.getItem('user'));
+      const create = await fetch(baseUrl + '/api/integration', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + auth.token
+        },
         body: JSON.stringify({ cameraName, rtspURL, panelId })
       });
+      console.log(create, 'log')
     }
     mutate(); // Refresh the data
     handleClose();
@@ -126,7 +120,7 @@ export default function Integration({ baseUrl }) {
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Camera Name</TableCell>
-            <TableCell>RTSP URL</TableCell>
+            <TableCell>Snapshot</TableCell>
             <TableCell>Panel ID</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -141,11 +135,11 @@ export default function Integration({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            integrationMock.map((integration) => (
+            integrationMock.map((integration, index) => (
               <TableRow key={integration.id}>
-                <TableCell>{integration.id}</TableCell>
+                <TableCell>{index + 1}</TableCell>
                 <TableCell>{integration.cameraName}</TableCell>
-                <TableCell>{integration.rtspURL}</TableCell>
+                <TableCell>{integration.isSnapShotActive === false ? 'Mati' : 'Hidup'}</TableCell>
                 <TableCell>{integration.panelId}</TableCell>
                 <TableCell>
                   <Tooltip title="Edit Integration">

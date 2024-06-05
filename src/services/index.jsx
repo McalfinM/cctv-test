@@ -19,6 +19,24 @@ const get = async (url) => {
   return response.json();
 };
 
+const getData = async (url) => {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    }
+  });
+
+  if (!response.ok) {
+    const error = new Error('An error occurred while fetching the data.');
+    error.info = await response.json();
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.json();
+};
+
 const post = async (url, data) => {
   const response = await fetch(url, {
     method: 'POST',
@@ -39,4 +57,4 @@ const post = async (url, data) => {
   return response.json();
 };
 
-export { get, post };
+export { get, post, getData };

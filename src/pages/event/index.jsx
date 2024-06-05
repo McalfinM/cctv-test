@@ -27,31 +27,22 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { get } from 'services';
+import { post } from 'services';
 
 export default function EventPage({ baseUrl }) {
-  const { data: events, error, mutate } = useSWR(baseUrl + 'api/events', get);
+  const { data: events, error, mutate } = useSWR();
 
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [eventMock, setEventMock] = useState();
+  const [eventMock, setEventMock] = useState([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setEventMock([
-        { id: 1, name: 'Sample Event', date: '2024-06-15' },
-        { id: 2, name: 'Sample Event 2', date: '2024-06-15' },
-        { id: 3, name: 'Sample Event 3', date: '2024-06-15' },
-        { id: 4, name: 'Sample Event 4', date: '2024-06-15' },
-        { id: 5, name: 'Sample Event 5', date: '2024-06-15' },
-        { id: 6, name: 'Sample Event 6', date: '2024-06-15' },
-        { id: 7, name: 'Sample Event 7', date: '2024-06-15' }
-      ]);
-    }, 500);
-    return () => {};
-  }, []);
+    if(events){
+      setEventMock(events.data)
+    }
+  }, [events]);
 
   const handleClickOpen = (event) => {
     setEditingEvent(event);
@@ -110,7 +101,7 @@ export default function EventPage({ baseUrl }) {
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Name</TableCell>
-            <TableCell>Date</TableCell>
+            <TableCell>Camera Id</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -124,11 +115,11 @@ export default function EventPage({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            eventMock.map((event) => (
+            eventMock.map((event, index) => (
               <TableRow key={event.id}>
-                <TableCell>{event.id}</TableCell>
-                <TableCell>{event.name}</TableCell>
-                <TableCell>{event.date}</TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{event.eventTypeString}</TableCell>
+                <TableCell>{event.CameraId}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleClickOpen(event)}>
                     <EditOutlined />
