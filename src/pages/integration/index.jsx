@@ -85,15 +85,26 @@ export default function Integration({ baseUrl }) {
     } else {
       // Create new integration
       const auth = JSON.parse(localStorage.getItem('user'));
-      const create = await fetch(baseUrl + '/api/integration', {
+      await fetch(baseUrl + '/api/integration', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + auth.token
+          Authorization: 'Bearer ' + auth.token
         },
-        body: JSON.stringify({ cameraName, rtspURL, panelId })
+        body: JSON.stringify({
+          cameraName: cameraName,
+          rtspURL: rtspURL,
+          panelId: Number(panelId) // Pastikan panelId adalah number
+        })
+      }).then(async (res) => {
+        if (!res.ok) {
+          const errorData = await res.json();
+
+          alert(errorData.message);
+        } else {
+          alert('Data ditambahkan');
+        }
       });
-      console.log(create, 'log')
     }
     mutate(); // Refresh the data
     handleClose();
