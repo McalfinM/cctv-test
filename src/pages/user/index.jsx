@@ -26,39 +26,54 @@ import MainCard from 'components/MainCard';
 
 // SWR for data fetching
 import useSWR from 'swr';
-import { get } from 'services';
+import { get, post } from 'services';
 
 export default function User({ baseUrl }) {
-  const { data: users, error, mutate } = useSWR(baseUrl + '/users', get);
-
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [groupId, setGroupId] = useState('');
   const [userMock, setUserMock] = useState();
 
+  const payload = {
+    page: 1,
+    pageSize: 10,
+    
+  };
+  
+
   useEffect(() => {
-    setTimeout(() => {
-      setUserMock([
-        { id: 1, name: 'John Doe', email: 'john.doe@example.com' },
-        { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com' }
-      ]);
-    }, 500);
-    return () => {};
+    post(baseUrl + '/api/employee/list', {
+      page: payload.page,
+      pageSize: payload.pageSize,
+    })
+      .then(response => {
+        console.log(response, 'ress');
+        setUserMock(response?.data ?? []);
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
   }, []);
 
   const handleClickOpen = (user) => {
     setEditingUser(user);
-    setName(user ? user.name : '');
+    setUsername(user ? user.tFirstName : '');
     setEmail(user ? user.email : '');
+    setPassword('');
+    setGroupId(user ? user.groupId : '');
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
     setEditingUser(null);
-    setName('');
+    setUsername('');
     setEmail('');
+    setPassword('');
+    setGroupId('');
   };
 
   const handleSave = async () => {
@@ -67,17 +82,25 @@ export default function User({ baseUrl }) {
       await fetch(baseUrl + '/users/' + editingUser.id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({ username, email, groupId })
       });
     } else {
       // Create new user
-      await fetch(baseUrl + '/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email })
+      await post(baseUrl + '/api/auth/register', {
+        username, password, email, groupId: Number(groupId)
       });
     }
-    mutate(); // Refresh the data
+    // Refresh the data
+    post(baseUrl + '/api/employee/list', {
+      page: payload.page,
+      pageSize: payload.pageSize,
+    })
+      .then(response => {
+        setUserMock(response?.data ?? []);
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
     handleClose();
   };
 
@@ -85,7 +108,17 @@ export default function User({ baseUrl }) {
     await fetch(baseUrl + '/users/' + id, {
       method: 'DELETE'
     });
-    mutate(); // Refresh the data
+    // Refresh the data
+    post(baseUrl + '/api/employee/list', {
+      page: payload.page,
+      pageSize: payload.pageSize,
+    })
+      .then(response => {
+        setUserMock(response?.data ?? []);
+      })
+      .catch(error => {
+        console.error('Error fetching users:', error);
+      });
   };
 
   return (
@@ -102,7 +135,7 @@ export default function User({ baseUrl }) {
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
+            <TableCell>Department</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -116,11 +149,11 @@ export default function User({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            userMock.map((user) => (
+            userMock.map((user, index) => (
               <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{user.tFirstName + ' ' + user.tLastName}</TableCell>
+                <TableCell>{user.tblDepartment.tDescDepartment}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleClickOpen(user)}>
                     <EditOutlined />
@@ -137,8 +170,10 @@ export default function User({ baseUrl }) {
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{editingUser ? 'Edit User' : 'Create User'}</DialogTitle>
         <DialogContent>
-          <TextField autoFocus margin="dense" label="Name" type="text" fullWidth value={name} onChange={(e) => setName(e.target.value)} />
+          <TextField autoFocus margin="dense" label="Username" type="text" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} />
           <TextField margin="dense" label="Email" type="email" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} />
+          <TextField margin="dense" label="Password" type="password" fullWidth value={password} onChange={(e) => setPassword(e.target.value)} />
+          <TextField margin="dense" label="Group ID" type="text" fullWidth value={groupId} onChange={(e) => setGroupId(e.target.value)} />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="secondary">

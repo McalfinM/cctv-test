@@ -29,6 +29,7 @@ import MainCard from 'components/MainCard';
 import useSWR from 'swr';
 import { useEffect } from 'react';
 import { post } from 'services';
+import StreamPage from './video';
 
 export default function Integration({ baseUrl }) {
   const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', post);
@@ -216,13 +217,7 @@ export default function Integration({ baseUrl }) {
                 <strong>Video Preview:</strong>
               </Typography>
               <Box mt={2}>
-                <video width="100%" controls>
-                  <source
-                    src={`http://localhost:8080/stream?url=${encodeURIComponent(selectedIntegration.rtspURL)}`}
-                    type="application/x-mpegURL"
-                  />
-                  Your browser does not support the video tag.
-                </video>
+              <StreamPage />
               </Box>
             </>
           )}

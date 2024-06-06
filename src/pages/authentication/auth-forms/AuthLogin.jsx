@@ -40,29 +40,7 @@ export default function AuthLogin({ isDemo = false }) {
   const [checked, setChecked] = React.useState(false);
 
   const [showPassword, setShowPassword] = React.useState(false);
-  const mockResponse = {
-    "userData": {
-      "id": 6,
-      "username": "test",
-      "email": "test@gmail.com",
-      "groupName": "Operator",
-      "acl": [
-        {
-          "menuName": "event",
-          "canEdit": true,
-          "canDelete": true,
-          "canCreate": true
-        },
-        {
-          "menuName": "auth",
-          "canEdit": false,
-          "canDelete": false,
-          "canCreate": true
-        }
-      ]
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwidXNlcm5hbWUiOiJ0ZXN0IiwiZW1haWwiOiJ0ZXN0QGdtYWlsLmNvbSIsImdyb3VwTmFtZSI6Ik9wZXJhdG9yIiwiYWNsIjpbeyJtZW51TmFtZSI6ImV2ZW50IiwiY2FuRWRpdCI6dHJ1ZSwiY2FuRGVsZXRlIjp0cnVlLCJjYW5DcmVhdGUiOnRydWV9LHsibWVudU5hbWUiOiJhdXRoIiwiY2FuRWRpdCI6ZmFsc2UsImNhbkRlbGV0ZSI6ZmFsc2UsImNhbkNyZWF0ZSI6dHJ1ZX1dLCJpYXQiOjE3MTc2MDk2Nzh9.Ur2LNhIMc66IVokivPCcloulcWgk30Fk2auptcuTDQY"
-  }
+
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
@@ -84,41 +62,40 @@ export default function AuthLogin({ isDemo = false }) {
           password: Yup.string().max(50).required('Password is required')
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-          Storage.set('user', mockResponse)
-          console.log("🚀 ~ AuthLogin ~ key:", key)
-          navigate('/dashboard');
-          // try {
-          //   // Perform authentication logic here, such as sending the username and password to a server for validation
-          //   // Example:
-          //   const response = await fetch(import.meta.env.VITE_APP_BASE_URL + '/api/auth/login', {
-          //     method: 'POST',
-          //     headers: {
-          //       'Content-Type': 'application/json'
-          //     },
-          //     body: JSON.stringify(values)
-          //   });
+          
+          try {
+            // Perform authentication logic here, such as sending the username and password to a server for validation
+            // Example:
+            const response = await fetch(import.meta.env.VITE_APP_BASE_URL + '/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(values)
+            });
 
-          //   // Parse the response as JSON
+            // Parse the response as JSON
 
-          //   if (!response.ok) {
-          //     const errorData = await response.json();
-          //     throw new Error(errorData.message);
-          //   }
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message);
+            }
 
-          //   // If authentication is successful, you can redirect the user or perform other actions
-          //   const responseData = await response.json();
-          //   Storage.set('user', responseData);
-          //   setStatus({ success: true });
-          //   Storage.get('user');
-
-          //   // localStorage.setItem('token');
-          // } catch (error) {
-          //   // If there is an error during authentication, display error messages
-          //   setErrors({ submit: error.message });
-          // } finally {
-          //   // Ensure that the form is no longer submitting
-          //   setSubmitting(false);
-          // }
+            // If authentication is successful, you can redirect the user or perform other actions
+            const responseData = await response.json();
+            Storage.set('user', responseData);
+            setStatus({ success: true });
+            Storage.get('user');
+            navigate('/dashboard');
+            // localStorage.setItem('token');
+          } catch (error) {
+            // If there is an error during authentication, display error messages
+            setErrors({ submit: error.message });
+          } finally {
+            // Ensure that the form is no longer submitting
+            
+            setSubmitting(false);
+          }
 
 
         }}

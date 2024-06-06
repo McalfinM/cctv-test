@@ -31,11 +31,28 @@ export default function Event({ baseUrl }) {
   const [date, setDate] = useState('');
   const [userAccess, setUserAccess] = useState(null);
   const user = Storage.get('user');
-
+  const payload = {
+    page: 1,
+    pageSize: 10,
+    iEventType: 97, // Opsional
+    IdPanel: 0, // Opsional
+    IdDoor: 0, // Opsional
+    date: { // Opsional
+      from: "",
+      to: ""
+    }
+  };
 
   useEffect(() => {
 
-    post(baseUrl + '/events', { payload: 'payload' })
+    post(baseUrl + '/api/event/list', { page: payload.page, pageSize: payload.pageSize,  
+      iEventType: 97, // Opsional
+      IdPanel: 0, // Opsional
+      IdDoor: 0, // Opsional
+      date: { // Opsional
+      from: "",
+      to: ""
+    } })
       .then(response => {
         console.log('Event created:', response);
         setEvents(response?.data ?? [])
@@ -43,10 +60,6 @@ export default function Event({ baseUrl }) {
       .catch(error => {
         console.error('Error creating event:', error);
       });
-
-    return () => {
-
-    }
   }, [])
 
 
@@ -119,7 +132,7 @@ export default function Event({ baseUrl }) {
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Name</TableCell>
-            <TableCell>Date</TableCell>
+            <TableCell>Id Panel</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -135,9 +148,9 @@ export default function Event({ baseUrl }) {
           ) : (
             events.map((event, index) => (
               <TableRow key={event.id}>
-                <TableCell>{event.id}</TableCell>
-                <TableCell>{event.name}</TableCell>
-                <TableCell>{event.date}</TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{event.eventTypeString}</TableCell>
+                <TableCell>{event.IdPanel}</TableCell>
                 <TableCell>
                   {(userAccess?.canEdit || userAccess?.canDelete) && (
                     <>

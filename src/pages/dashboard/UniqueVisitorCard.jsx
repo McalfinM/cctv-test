@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -11,10 +11,66 @@ import Box from '@mui/material/Box';
 import MainCard from 'components/MainCard';
 import IncomeAreaChart from './IncomeAreaChart';
 
+// Fungsi untuk meminta izin notifikasi
+const requestNotificationPermission = () => {
+  if (!('Notification' in window)) {
+    console.log('Browser ini tidak mendukung notifikasi desktop');
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    console.log('Izin untuk notifikasi sudah diberikan');
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        console.log('Izin untuk notifikasi diberikan');
+      } else {
+        console.log('Izin untuk notifikasi tidak diberikan');
+      }
+    });
+  } else {
+    console.log('Izin untuk notifikasi telah ditolak sebelumnya');
+  }
+};
+
+// Fungsi untuk menampilkan notifikasi
+const showNotification = (title, options) => {
+  if (Notification.permission === 'granted') {
+    new Notification(title, options);
+  } else {
+    console.log('Izin untuk notifikasi belum diberikan');
+  }
+};
+
 // ==============================|| DEFAULT - UNIQUE VISITOR ||============================== //
 
 export default function UniqueVisitorCard() {
   const [slot, setSlot] = useState('week');
+
+  useEffect(() => {
+    // Meminta izin notifikasi saat komponen dimuat
+    requestNotificationPermission();
+  }, []);
+
+  const handleButtonClick = (newSlot) => {
+    setSlot(newSlot);
+
+    // Menampilkan notifikasi saat tombol "Month" diklik
+    if (newSlot === 'month') {
+      const options = {
+        body: 'Anda telah memilih tampilan data per bulan',
+        icon: 'https://via.placeholder.com/128',
+      };
+      showNotification('Pilihan Tampilan Data', options);
+    }
+  };
+
+  const handleTestNotificationClick = () => {
+    const options = {
+      body: 'Ini adalah notifikasi tes',
+      icon: 'https://via.placeholder.com/128',
+    };
+    showNotification('Notifikasi Tes', options);
+  };
 
   return (
     <>
@@ -26,7 +82,7 @@ export default function UniqueVisitorCard() {
           <Stack direction="row" alignItems="center" spacing={0}>
             <Button
               size="small"
-              onClick={() => setSlot('month')}
+              onClick={() => handleButtonClick('month')}
               color={slot === 'month' ? 'primary' : 'secondary'}
               variant={slot === 'month' ? 'outlined' : 'text'}
             >
@@ -34,7 +90,7 @@ export default function UniqueVisitorCard() {
             </Button>
             <Button
               size="small"
-              onClick={() => setSlot('week')}
+              onClick={() => handleButtonClick('week')}
               color={slot === 'week' ? 'primary' : 'secondary'}
               variant={slot === 'week' ? 'outlined' : 'text'}
             >
@@ -48,6 +104,9 @@ export default function UniqueVisitorCard() {
           <IncomeAreaChart slot={slot} />
         </Box>
       </MainCard>
+      <Button variant="contained" color="secondary" onClick={handleTestNotificationClick} sx={{ mt: 2 }}>
+        Test Notification
+      </Button>
     </>
   );
 }
