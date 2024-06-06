@@ -1,5 +1,4 @@
-// material-ui
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -17,31 +16,52 @@ import {
   CircularProgress,
   Box
 } from '@mui/material';
-
-// ant-design icons
 import { EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
-
-// project import
 import MainCard from 'components/MainCard';
-
-// SWR for data fetching
 import useSWR from 'swr';
-import { useEffect } from 'react';
+import Storage from 'utils/storage';
+import { post } from 'services';
 
-export default function EventPage({ baseUrl }) {
-  const { data: events, error, mutate } = useSWR();
-
+export default function Event({ baseUrl }) {
+  // const { data: events, error, mutate } = useSWR(post(baseUrl + '/events', { 'sasa': 'sasa' }));
+  const [events, setEvents] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [eventMock, setEventMock] = useState([]);
+  const [userAccess, setUserAccess] = useState(null);
+  const user = Storage.get('user');
+
 
   useEffect(() => {
-    if (events) {
-      setEventMock(events.data);
+
+    post(baseUrl + '/events', { payload: 'payload' })
+      .then(response => {
+        console.log('Event created:', response);
+        setEvents(response?.data ?? [])
+      })
+      .catch(error => {
+        console.error('Error creating event:', error);
+      });
+
+    return () => {
+
     }
-  }, [events]);
+  }, [])
+
+
+  useEffect(() => {
+    if (user?.userData?.acl?.length === 0) {
+      setUserAccess({ canCreate: true, canEdit: true, canDelete: true });
+      console.log('superadmin')
+    } else if (user?.userData?.acl?.length) {
+      console.log('admin')
+
+      const access = user.userData.acl.find(menu => menu.menuName === 'event');
+      setUserAccess(access);
+    }
+  }, []); // Empty dependency array ensures the effect runs only once
+
 
   const handleClickOpen = (event) => {
     setEditingEvent(event);
@@ -84,28 +104,27 @@ export default function EventPage({ baseUrl }) {
     mutate(); // Refresh the data
   };
 
-  //   if (error) return <div>Failed to load events</div>;
-
   return (
     <MainCard title="Event Management">
       <Typography variant="body2" gutterBottom>
-        Manage your events below. You can create, edit, or delete events as needed. If you can't edit, delete, or create events, it means
-        you don't have the necessary access permissions.
+        Manage your events below. You can create, edit, or delete events as needed. If you can't edit, delete, or create events, it means you don't have the necessary access permissions.
       </Typography>
-      <Button variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
-        Create Event
-      </Button>
+      {(userAccess?.canCreate || userAccess?.canEdit || userAccess?.canDelete) && (
+        <Button variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
+          Create Event
+        </Button>
+      )}
       <Table>
         <TableHead>
           <TableRow>
             <TableCell>ID</TableCell>
             <TableCell>Name</TableCell>
-            <TableCell>Camera Id</TableCell>
+            <TableCell>Date</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {!eventMock ? (
+          {!events && !userAccess ? (
             <TableRow>
               <TableCell colSpan={4} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -114,18 +133,22 @@ export default function EventPage({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            eventMock.map((event, index) => (
+            events.map((event, index) => (
               <TableRow key={event.id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{event.eventTypeString}</TableCell>
-                <TableCell>{event.CameraId}</TableCell>
+                <TableCell>{event.id}</TableCell>
+                <TableCell>{event.name}</TableCell>
+                <TableCell>{event.date}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleClickOpen(event)}>
-                    <EditOutlined />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(event.id)}>
-                    <DeleteOutlined />
-                  </IconButton>
+                  {(userAccess?.canEdit || userAccess?.canDelete) && (
+                    <>
+                      <IconButton onClick={() => handleClickOpen(event)}>
+                        <EditOutlined />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(event.id)}>
+                        <DeleteOutlined />
+                      </IconButton>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))
@@ -150,9 +173,11 @@ export default function EventPage({ baseUrl }) {
           <Button onClick={handleClose} color="secondary">
             Cancel
           </Button>
-          <Button onClick={handleSave} color="primary">
-            {editingEvent ? 'Save' : 'Create'}
-          </Button>
+          {(userAccess?.canCreate || userAccess?.canEdit) && (
+            <Button onClick={handleSave} color="primary">
+              {editingEvent ? 'Save' : 'Create'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </MainCard>

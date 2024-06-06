@@ -28,10 +28,10 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { getData } from 'services';
+import { post } from 'services';
 
 export default function Integration({ baseUrl }) {
-  const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', getData);
+  const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', post);
 
   const [open, setOpen] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
