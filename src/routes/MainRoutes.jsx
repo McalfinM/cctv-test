@@ -17,7 +17,7 @@ const Integration = Loadable(lazy(() => import('pages/integration/index')));
 const Log = Loadable(lazy(() => import('pages/log/index')));
 
 // ==============================|| MAIN ROUTING ||============================== //
-let baseUrl = import.meta.env.VITE_APP_BASE_URL;
+let baseUrl = 'https://axtrax-api.productionready.xyz'
 
 const MainRoutes = {
   path: '/',
