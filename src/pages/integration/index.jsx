@@ -16,7 +16,9 @@ import {
   Typography,
   CircularProgress,
   Box,
-  Tooltip
+  Tooltip,
+  Snackbar,
+  Alert
 } from '@mui/material';
 
 // ant-design icons
@@ -28,10 +30,18 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { post } from 'services';
+import { get, post, token } from 'services';
 import StreamPage from './video';
+import VideoFeed from './vidsec';
+import { useNavigate } from 'react-router';
 
 export default function Integration({ baseUrl }) {
+ 
+  useEffect(() => {
+    if(!token){
+      window.location.href = '/login'
+    }
+  }, []);
   const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', post);
 
   const [open, setOpen] = useState(false);
@@ -46,19 +56,51 @@ export default function Integration({ baseUrl }) {
   useEffect(() => {
     if (integration) {
       setIntegrationMock(integration.integrations);
+    } else if (error) {
+      console.error('SWR Error:', error.message);
     }
-  }, [integration]);
+  }, [integration, error]);
 
-  const handleClickOpen = (integration) => {
-    setEditingIntegration(integration);
-    setCameraName(integration ? integration.cameraName : '');
-    setRtspURL(integration ? integration.rtspURL : '');
-    setPanelId(integration ? integration.panelId : '');
+  const handleClickOpen = async (integration) => {
+    if (integration) {
+      const details = await fetchIntegrationDetails(integration.id);
+      
+      if (details) {
+        setEditingIntegration(details);
+        setCameraName(details.cameraName);
+        setRtspURL(details.rtspURL);
+        setPanelId(details.panelId);
+      }
+    } else {
+      setEditingIntegration(null);
+      setCameraName('');
+      setRtspURL('');
+      setPanelId('');
+    }
     setOpen(true);
   };
 
-  const handleClickOpenDetails = (integration) => {
-    setSelectedIntegration(integration);
+  const fetchIntegrationDetails = async (integrationId) => {
+    try {
+      const response = await get(baseUrl + `/api/integration/${integrationId}`);
+      return response.integration;
+    } catch (error) {
+      console.error('Error fetching integration details:', error);
+      return null;
+    }
+  };
+
+
+  const handleClickOpenDetails = async (integration) => {
+    if (integration) {
+      const details = await fetchIntegrationDetails(integration.id);
+      if (details) {
+        setSelectedIntegration(details)
+      }
+    } else {
+      setSelectedIntegration(integration);
+    
+    }
     setOpenDetails(true);
   };
 
@@ -111,6 +153,7 @@ export default function Integration({ baseUrl }) {
     handleClose();
   };
 
+  console.log(selectedIntegration, 'selll')
   const handleDelete = async (id) => {
     await fetch(baseUrl + '/integration/' + id, {
       method: 'DELETE'
@@ -120,13 +163,19 @@ export default function Integration({ baseUrl }) {
 
   return (
     <MainCard title="Integration Management">
-      <Typography variant="body2" gutterBottom>
-        Manage your integration below. You can create, edit, or delete integration as needed. If you can't edit, delete, or create
-        integration, it means you don't have the necessary access permissions.
-      </Typography>
+       {
+        error?.message ? ( 
+        <>
+        <Alert severity="error">
+          {error.message}
+        </Alert>
+        </> 
+        ) : (<></>)
+      }
       <Button variant="contained" color="primary" startIcon={<ApiOutlined />} onClick={() => handleClickOpen(null)}>
         Create Integration
       </Button>
+    
       <Table>
         <TableHead>
           <TableRow>
@@ -217,7 +266,8 @@ export default function Integration({ baseUrl }) {
                 <strong>Video Preview:</strong>
               </Typography>
               <Box mt={2}>
-              <StreamPage />
+              <VideoFeed src={selectedIntegration.rtspURL} />
+              {/* <StreamPage/> */}
               </Box>
             </>
           )}

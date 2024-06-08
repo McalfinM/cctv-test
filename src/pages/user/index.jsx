@@ -26,9 +26,15 @@ import MainCard from 'components/MainCard';
 
 // SWR for data fetching
 import useSWR from 'swr';
-import { get, post } from 'services';
+import { get, post, token } from 'services';
 
 export default function User({ baseUrl }) {
+
+  useEffect(() => {
+    if(!token){
+      window.location.href = '/login'
+    }
+  }, []);
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [username, setUsername] = useState('');

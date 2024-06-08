@@ -1,5 +1,9 @@
-let user = localStorage.getItem('user');
-let token = user ? JSON.parse(user)?.token : '';
+import { baseUrl } from "routes/MainRoutes";
+
+export const user = localStorage.getItem('user');
+export const token = user ? JSON.parse(user)?.token : '';
+export const myusername = user ? JSON.parse(user)?.userData?.username : '';
+
 
 const get = async (url) => {
   const response = await fetch(url, {
@@ -38,8 +42,7 @@ const get = async (url) => {
 // };
 
 const post = async (url, data) => {
-  console.log("🚀 ~ post ~ data:", data)
-  console.log("🚀 ~ post ~ url:", url)
+  
   const headers = {
     Authorization: `Bearer ${token}`
   };
@@ -56,15 +59,25 @@ const post = async (url, data) => {
 
   const response = await fetch(url, options);
 
+  console.log(response.ok ,'okee')
   if (!response.ok) {
-    const error = new Error('An error occurred while posting the data.');
-    error.info = await response.json();
-    error.status = response.status;
-    throw error;
+    const message = await response.json();
+    console.error('Error response:', message);
+    return Promise.reject(message);
+  } else {
+    return response.json();
   }
 
-  return response.json();
 };
+
+export const checkMe = async () => {
+  return await fetch(baseUrl + '/api/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+}
 
 export {
   get,

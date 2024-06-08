@@ -1,21 +1,36 @@
+<!-- index.html (React Client) -->
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
-
-<title>Stream PAGE</title>
-<!-- This style is clearly not needed but yolo  -->
-<style>
-body {
-width: 35em;
-margin: 0 auto;
-font-family: Tahoma, Verdana, Arial, sans-serif;
-}
-</style>
-</head>   
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTSP Stream</title>
+</head>
 <body>
-<h1>What you want</h1>
-<!-- <video id="player" class="video-js vjs-default-skin" width="800" height="440"  controls preload="none">
-<source src="rtsp://rtspstream:659218aa6d32bf4a4effb004877235b1@zephyr.rtsp.stream/movie" type="application/x-mpegURL" />
-</video> -->
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js"></script>
+  <script>
+    // Kode React untuk menampilkan stream RTSP
+    class RtspPlayer extends React.Component {
+      constructor(props) {
+        super(props);
+        this.videoRef = React.createRef();
+      }
 
-<p><video id="video" src="rtsp://rtspstream:659218aa6d32bf4a4effb004877235b1@zephyr.rtsp.stream/movie" autoplay width="900" height="900"></video></p>
-<script>
-</script>
+      componentDidMount() {
+        const video = this.videoRef.current;
+        video.src = 'http://localhost:8000/stream.mjpg';
+        video.play();
+      }
+
+      render() {
+        return <video ref={this.videoRef} width="640" height="480" />;
+      }
+    }
+
+    ReactDOM.render(<RtspPlayer />, document.getElementById('root'));
+  </script>
+</body>
+</html>

@@ -17,7 +17,7 @@ const Integration = Loadable(lazy(() => import('pages/integration/index')));
 const Log = Loadable(lazy(() => import('pages/log/index')));
 
 // ==============================|| MAIN ROUTING ||============================== //
-let baseUrl = 'https://axtrax-api.productionready.xyz'
+export const baseUrl = 'https://axtrax-api.productionready.xyz'
 
 const MainRoutes = {
   path: '/',
@@ -55,18 +55,6 @@ const MainRoutes = {
     {
       path: 'log',
       element: <Log baseUrl={baseUrl} />
-    },
-    {
-      path: 'sample-page',
-      element: <SamplePage />
-    },
-    {
-      path: 'shadow',
-      element: <Shadow />
-    },
-    {
-      path: 'typography',
-      element: <Typography />
     }
   ]
 };

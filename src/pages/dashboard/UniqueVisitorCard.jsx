@@ -104,9 +104,6 @@ export default function UniqueVisitorCard() {
           <IncomeAreaChart slot={slot} />
         </Box>
       </MainCard>
-      <Button variant="contained" color="secondary" onClick={handleTestNotificationClick} sx={{ mt: 2 }}>
-        Test Notification
-      </Button>
     </>
   );
 }

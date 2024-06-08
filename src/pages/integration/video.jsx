@@ -1,37 +1,25 @@
-import React, { useEffect } from "react";
-import JSMpeg from "@cycjimmy/jsmpeg-player";
-
-const ffmpegIP = "localhost";
+// src/components/RTSPPlayer.js
+import React, { useEffect, useRef } from 'react';
+import { loadPlayer } from 'rtsp-relay/browser';
 
 const StreamPage = () => {
-  useEffect(() => {
-    var videoUrl = `rtsp://rtspstream:b984c9fba7e12a09f419b4f0b71d2d2d@zephyr.rtsp.stream/pattern`;
-    var player = new JSMpeg.VideoElement("#video-canvas", videoUrl, {
-      autoplay: true,
-    });
-    console.log(player);
-  });
+  const canvasRef = useRef(null);
 
-  return (
-    <div id="body">
-      <div
-        id="title"
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontSize: "28px",
-          fontWeight: "bold",
-          marginTop: "10px",
-          marginBottom: "10px",
-          color: "blue",
-        }}
-      >
-        Player stream RTSP
-      </div>
-      <div id="video-canvas" style={{ height: "480px", width: "640px" }}></div>
-    </div>
-  );
+  useEffect(() => {
+    const player = loadPlayer({
+      url: `ws://${window.location.hostname}:2001/api/stream`,
+      canvas: canvasRef.current,
+      onDisconnect: () => console.log('Connection lost!'),
+    });
+
+    return () => {
+      if (player) {
+        player.destroy();
+      }
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />;
 };
 
 export default StreamPage;

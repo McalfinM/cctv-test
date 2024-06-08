@@ -20,10 +20,16 @@ import { EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icon
 import MainCard from 'components/MainCard';
 import useSWR from 'swr';
 import Storage from 'utils/storage';
-import { post } from 'services';
+import { checkMe, get, post, token } from 'services';
+import { useNavigate } from 'react-router';
 
 export default function Event({ baseUrl }) {
-  // const { data: events, error, mutate } = useSWR(post(baseUrl + '/events', { 'sasa': 'sasa' }));
+
+  useEffect(() => {
+    if(!token){
+      window.location.href = '/login'
+    }
+  }, []);
   const [events, setEvents] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -44,7 +50,8 @@ export default function Event({ baseUrl }) {
   };
 
   useEffect(() => {
-
+    const me = checkMe()
+    console.log(me, 'meee')
     post(baseUrl + '/api/event/list', { page: payload.page, pageSize: payload.pageSize,  
       iEventType: 97, // Opsional
       IdPanel: 0, // Opsional
@@ -58,7 +65,7 @@ export default function Event({ baseUrl }) {
         setEvents(response?.data ?? [])
       })
       .catch(error => {
-        console.error('Error creating event:', error);
+        console.log('Error creating event:', error);
       });
   }, [])
 
