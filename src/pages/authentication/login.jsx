@@ -9,17 +9,15 @@ import Typography from '@mui/material/Typography';
 import AuthWrapper from './AuthWrapper';
 import AuthLogin from './auth-forms/AuthLogin';
 import { useEffect } from 'react';
+import { getToken } from 'services';
 
 // ================================|| LOGIN ||================================ //
 
 export default function Login() {
-  let user = localStorage.getItem('user');
-  let token = user ? JSON.parse(user)?.token : '';
-  console.log('🚀 ~ file: login.jsx:17 ~ Login ~ token:', token);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (token) navigate('/dashboard');
+    if (getToken()) navigate('/dashboard');
     return () => {};
   }, []);
 

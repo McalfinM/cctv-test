@@ -29,63 +29,70 @@ import {
 import { EditOutlined, DeleteOutlined, CalendarOutlined, FilterOutlined } from '@ant-design/icons';
 import MainCard from 'components/MainCard';
 import useSWR from 'swr';
-import { } from 'utils/storage';
-import { adminAccess, checkMe, get, post, token, user } from 'services';
+import { get, getAdminAccess, getToken, getUser, post } from 'services';
 import { useNavigate } from 'react-router';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import MessageDisplay from 'components/MessageDisplay';
+
 export default function Event({ baseUrl }) {
 
   useEffect(() => {
-    if (!token) window.location.href = '/login'
+    if (!getToken()) window.location.href = '/login';
   }, []);
 
-  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'event') || adminAccess;
+  const userAccess = getUser()?.userData?.acl?.find(menu => menu?.menuName === 'event') || getAdminAccess();
 
   const { data: listEventType } = useSWR(baseUrl + '/api/filter-helper/event-type', get);
   const { data: listPanel } = useSWR(baseUrl + '/api/filter-helper/panel', get);
-  const { data: listReader } = useSWR(baseUrl + '/api/filter-helper/reader', get);
-  const { data: listDepartment } = useSWR(baseUrl + '/api/filter-helper/department', get);
-  // const { data: listDoor } = useSWR(baseUrl + '/api/filter-helper/door', get);
+  // const { data: listReader } = useSWR(baseUrl + '/api/filter-helper/reader', get);
+  // const { data: listDepartment } = useSWR(baseUrl + '/api/filter-helper/department', get);
+  const { data: listDoor } = useSWR(baseUrl + '/api/filter-helper/door', get);
 
 
   const [events, setEvents] = useState([]);
+  const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [filter, setFilter] = useState('');
-  const [filteredEvents, setFilteredEvents] = useState(events);
+  const [loading, setLoading] = useState(false);
 
-
-  const payload = {
+  const [dateSelected, setDateSelected] = useState({
+    from: null,
+    to: null
+  });
+  const [filters, setFilters] = useState({
     page: 1,
     pageSize: 10,
-    iEventType: 97, // Opsional
-    IdPanel: 0, // Opsional
-    IdDoor: 0, // Opsional
-    date: { // Opsional
-      from: "",
-      to: ""
+    iEventType: '',
+    IdPanel: '',
+    IdDoor: '',
+    date: {
+      from: null,
+      to: null
     }
-  };
+  });
 
   useEffect(() => {
-    post(baseUrl + '/api/event/list', {
-      page: payload.page, pageSize: payload.pageSize,
-      iEventType: 97, // Opsional
-      IdPanel: 0, // Opsional
-      IdDoor: 0, // Opsional
-      date: { // Opsional
-        from: "",
-        to: ""
-      }
-    }).then(response => {
-      setEvents(response?.data ?? [])
-    })
-      .catch(error => {
-        // console.log('Error creating event:', error);
-      });
+    getEvent(filters)
   }, [])
+
+  const getEvent = (payload) => {
+    setLoading(true)
+    post(baseUrl + '/api/event/list', payload)
+      .then(response => {
+        setEvents(response?.data ?? [])
+      })
+      .catch(error => {
+        setEvents([])
+        setError(error)
+        // console.log('Error creating event:', error);
+      }).finally(() => {
+        setLoading(false)
+      })
+  }
 
   const handleClickOpen = (event) => {
     setEditingEvent(event);
@@ -128,24 +135,6 @@ export default function Event({ baseUrl }) {
     mutate();
   };
 
-
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [filters, setFilters] = useState({
-    eventType: '',
-    panel: '',
-    reader: '',
-    department: '',
-    // door: ''
-  });
-
-  const handleFilterIconClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseFilter = () => {
-    setAnchorEl(null);
-  };
-
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     setFilters({
@@ -155,138 +144,149 @@ export default function Event({ baseUrl }) {
   };
 
   const handleResetFilter = () => {
+    let resetPayload = {
+      page: 1,
+      pageSize: 10,
+      iEventType: '',
+      IdPanel: '',
+      IdDoor: '',
+      date: {
+        from: null,
+        to: null
+      }
+    }
+    setDateSelected({
+      from: null,
+      to: null
+    })
+    setFilters(resetPayload)
     setShowFilter(false)
+    getEvent(resetPayload)
+  }
+  const handleApplyFilter = () => {
+    setShowFilter(false)
+    getEvent(filters)
   }
 
+  const handleDateChange = (date, name) => {
+    const formattedDate = new Date(date).toISOString().split('T')[0];
+    setFilters({
+      ...filters,
+      date: {
+        ...filters.date,
+        [name]: formattedDate
+      }
+    });
+
+    setDateSelected({
+      ...dateSelected,
+      [name]: date
+    });
+  };
 
   return (
     <MainCard title="Event Management">
-      <Typography variant="body2" gutterBottom>
-        Manage your events below. You can create, edit, or delete events as needed. If you can't edit, delete, or create events, it means you don't have the necessary access permissions.
-      </Typography>
+      <MessageDisplay error={error} />
       <Grid container justifyContent="space-between" alignItems="center" mb={2}>
+
         <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
           Create Event
         </Button>
 
-        {!showFilter ?
-          <IconButton onClick={() => setShowFilter(!showFilter)}>
-            <FilterOutlined />
-          </IconButton>
-          :
-          <Grid item style={{ flexGrow: 1 }}>
-            <Grid container justifyContent="flex-end" alignItems="center" spacing={2}>
-              {!showFilter ? (
-                <IconButton onClick={() => setShowFilter(!showFilter)}>
-                  <FilterOutlined />
-                </IconButton>
-              ) : (
-                <>
-                  <Grid item>
-                    <FormControl fullWidth style={{ minWidth: 120 }}>
-                      <InputLabel>Event Type</InputLabel>
-                      <Select
-                        name="eventType"
-                        value={filters.eventType}
-                        onChange={handleFilterChange}
-                      >
-                        {listEventType?.map((option, idx) => (
-                          <MenuItem key={idx} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item>
-                    <FormControl fullWidth style={{ minWidth: 120 }}>
-                      <InputLabel>Panel</InputLabel>
-                      <Select
-                        name="panel"
-                        value={filters.panel}
-                        onChange={handleFilterChange}
-                      >
-                        {listPanel?.map((option, idx) => (
-                          <MenuItem key={idx} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item>
-                    <FormControl fullWidth style={{ minWidth: 120 }}>
-                      <InputLabel>Reader</InputLabel>
-                      <Select
-                        name="reader"
-                        value={filters.reader}
-                        onChange={handleFilterChange}
-                      >
-                        {listReader?.map((option, idx) => (
-                          <MenuItem key={idx} value={option.value}>
-                            {option.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item>
-                    <FormControl fullWidth style={{ minWidth: 120 }}>
-                      <InputLabel>Department</InputLabel>
-                      <Select
-                        name="department"
-                        value={filters.department}
-                        onChange={handleFilterChange}
-                      >
-                        {listDepartment?.map((option, idx) => (
-                          <MenuItem key={idx} value={option.id}>
-                            {option.text}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
+        <IconButton onClick={() => setShowFilter(!showFilter)}>
+          <FilterOutlined />
+        </IconButton>
+      </Grid>
 
-                  <Grid item>
-                    <Button variant="contained" color="primary" onClick={handleClose}>
-                      Apply
-                    </Button>
-                  </Grid>
-                  <Grid item>
-                    <Button variant="outlined" color="error" onClick={handleResetFilter}>
-                      Reset
-                    </Button>
-                  </Grid>
-                </>
-              )}
-            </Grid>
+      {showFilter ?
+
+        <Grid container justifyContent="flex-end" alignItems="center" mb={2} gap={1} style={{ flexGrow: 1 }}>
+          <Grid item>
+            <FormControl fullWidth style={{ minWidth: 120 }}>
+              <InputLabel>Event Type</InputLabel>
+              <Select
+                name="iEventType"
+                value={filters.iEventType}
+                onChange={handleFilterChange}
+              >
+                {listEventType?.map((option, idx) => (
+                  <MenuItem key={idx} value={option.id}>
+                    {option.text}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <FormControl fullWidth style={{ minWidth: 120 }}>
+              <InputLabel>Panel</InputLabel>
+              <Select
+                name="IdPanel"
+                value={filters.IdPanel}
+                onChange={handleFilterChange}
+              >
+                {listPanel?.map((option, idx) => (
+                  <MenuItem key={idx} value={option.id}>
+                    {option.text}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
 
-        }
-      </Grid>
-      {/* <Popover
-        id='eventFilter'
-        open={showFilter}
-        onClose={() => setShowFilter(false)}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        // transformOrigin={{
-        //   vertical: 'top',
-        //   horizontal: 'right',
-        // }}
-      >
-        <Grid container spacing={2} style={{ padding: '16px', maxWidth: '300px' }}>
-         
-          <Grid item xs={12} style={{ textAlign: 'center' }}>
-            <Button variant="contained" color="primary" onClick={handleClose}>
-              Apply Filters
+          <Grid item>
+            <FormControl fullWidth style={{ minWidth: 120 }}>
+              <InputLabel>Door</InputLabel>
+              <Select
+                name="IdDoor"
+                value={filters.IdDoor}
+                onChange={handleFilterChange}
+              >
+                {listDoor?.map((option, idx) => (
+                  <MenuItem key={idx} value={option.id}>
+                    {option.text}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <FormControl fullWidth style={{ width: filters.date.from ? 150 : 125 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Start Date"
+                  value={dateSelected.from}
+                  onChange={(date) => handleDateChange(date, 'from')}
+                  renderInput={(params) => <FormControl fullWidth {...params} />}
+                />
+              </LocalizationProvider>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <FormControl fullWidth style={{ width: filters.date.to ? 150 : 125 }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="End Date"
+                  value={dateSelected.to}
+                  onChange={(date) => handleDateChange(date, 'to')}
+                  renderInput={(params) => <FormControl fullWidth {...params} />}
+                />
+              </LocalizationProvider>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" color="primary" onClick={handleApplyFilter}>
+              Apply
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button variant="outlined" color="error" onClick={handleResetFilter}>
+              Reset
             </Button>
           </Grid>
         </Grid>
-      </Popover> */}
-
+        : null
+      }
       <Table>
         <TableHead>
           <TableRow>
@@ -297,7 +297,7 @@ export default function Event({ baseUrl }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!events ? (
+          {loading ? (
             <TableRow>
               <TableCell colSpan={4} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -306,21 +306,29 @@ export default function Event({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            events.map((event, index) => (
-              <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{event.eventTypeString}</TableCell>
-                <TableCell>{event.IdPanel}</TableCell>
-                <TableCell>
-                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(event)}>
-                    <EditOutlined />
-                  </IconButton>
-                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(event.id)}>
-                    <DeleteOutlined />
-                  </IconButton>
+            events?.length ? (
+              events?.map((event, index) => (
+                <TableRow key={index}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{event.eventTypeString}</TableCell>
+                  <TableCell>{event.IdPanel}</TableCell>
+                  <TableCell>
+                    <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(event)}>
+                      <EditOutlined />
+                    </IconButton>
+                    <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(event.id)}>
+                      <DeleteOutlined />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={10} align="center">
+                  No data available
                 </TableCell>
               </TableRow>
-            ))
+            )
           )}
         </TableBody>
       </Table>
@@ -349,6 +357,6 @@ export default function Event({ baseUrl }) {
           )}
         </DialogActions>
       </Dialog>
-    </MainCard>
+    </MainCard >
   );
 }

@@ -11,7 +11,7 @@ import AnalyticEcommerce from 'components/cards/statistics/AnalyticEcommerce';
 import MonthlyBarChart from './MonthlyBarChart';
 import UniqueVisitorCard from './UniqueVisitorCard';
 import { useNavigate } from 'react-router';
-import { get, token } from 'services';
+import { get, getToken } from 'services';
 import { useEffect } from 'react';
 import useSWR from 'swr';
 
@@ -19,13 +19,18 @@ import useSWR from 'swr';
 
 export default function Dashboard({ baseUrl }) {
 
-  const { data: logs, error, mutate, } = useSWR(baseUrl + '/api/auth/me', get);
+  const { data, isLoading } = useSWR(baseUrl + '/api/auth/me', get);
 
   useEffect(() => {
-    if (!token) window.location.href = '/login'
-  }, [logs]);
+    if (!getToken) window.location.href = '/login'
+  }, []);
 
 
+  useEffect(() => {
+    if (!isLoading && data && !data.profile?.id) {
+      window.location.href = '/login';
+    }
+  }, [isLoading, data]);
 
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>

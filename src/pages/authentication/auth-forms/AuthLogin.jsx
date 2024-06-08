@@ -87,7 +87,6 @@ export default function AuthLogin({ isDemo = false }) {
             setStatus({ success: true });
             Storage.get('user');
             navigate('/dashboard');
-            // localStorage.setItem('token');
           } catch (error) {
             // If there is an error during authentication, display error messages
             setErrors({ submit: error.message });

@@ -24,18 +24,22 @@ import { EditOutlined, DeleteOutlined, ApiOutlined, EyeOutlined } from '@ant-des
 import MainCard from 'components/MainCard';
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { adminAccess, get, post, token, user } from 'services';
+import { get, getAdminAccess, getToken, getUser, post } from 'services';
 import StreamPage from './video';
 import VideoFeed from './vidsec';
+import MessageDisplay from 'components/MessageDisplay';
 
 export default function Integration({ baseUrl }) {
 
   useEffect(() => {
-    if (!token) window.location.href = '/login'
+    if (!getToken()) window.location.href = '/login';
   }, []);
 
-  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'integration') || adminAccess;
-  const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', post);
+  const userAccess = getUser()?.userData?.acl?.find(menu => menu?.menuName === 'integration') || getAdminAccess();
+
+  const { data: integration, error, mutate, isLoading } = useSWR(baseUrl + '/api/integration/list', post, {
+    revalidateOnFocus: false,
+  });
 
   const [open, setOpen] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -44,15 +48,6 @@ export default function Integration({ baseUrl }) {
   const [cameraName, setCameraName] = useState('');
   const [rtspURL, setRtspURL] = useState('');
   const [panelId, setPanelId] = useState('');
-  const [integrationMock, setIntegrationMock] = useState([]);
-
-  useEffect(() => {
-    if (integration) {
-      setIntegrationMock(integration.integrations);
-    } else if (error) {
-      console.error('SWR Error:', error.message);
-    }
-  }, [integration, error]);
 
   const handleClickOpen = async (integration) => {
     if (integration) {
@@ -146,7 +141,6 @@ export default function Integration({ baseUrl }) {
     handleClose();
   };
 
-  console.log(selectedIntegration, 'selll')
   const handleDelete = async (id) => {
     await fetch(baseUrl + '/integration/' + id, {
       method: 'DELETE'
@@ -156,15 +150,7 @@ export default function Integration({ baseUrl }) {
 
   return (
     <MainCard title="Integration Management">
-      {
-        error?.message ? (
-          <>
-            <Alert style={{ marginBottom: 10 }} severity="error">
-              {error.message}
-            </Alert>
-          </>
-        ) : (<></>)
-      }
+      <MessageDisplay error={error} />
       <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<ApiOutlined />} onClick={() => handleClickOpen(null)}>
         Create Integration
       </Button>
@@ -180,7 +166,7 @@ export default function Integration({ baseUrl }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!integrationMock ? (
+          {isLoading ? (
             <TableRow>
               <TableCell colSpan={5} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -189,31 +175,39 @@ export default function Integration({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            integrationMock.map((integration, index) => (
-              <TableRow key={integration.id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{integration.cameraName}</TableCell>
-                <TableCell>{integration.isSnapShotActive === false ? 'Mati' : 'Hidup'}</TableCell>
-                <TableCell>{integration.panelId}</TableCell>
-                <TableCell>
-                  <Tooltip title="Edit Integration">
-                    <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(integration)}>
-                      <EditOutlined />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete Integration">
-                    <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(integration.id)}>
-                      <DeleteOutlined />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="View Details">
-                    <IconButton onClick={() => handleClickOpenDetails(integration)}>
-                      <EyeOutlined />
-                    </IconButton>
-                  </Tooltip>
+            integration?.integrations?.length ? (
+              integration.integrations?.map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{item.cameraName}</TableCell>
+                  <TableCell>{item.isSnapShotActive === false ? 'Mati' : 'Hidup'}</TableCell>
+                  <TableCell>{item.panelId}</TableCell>
+                  <TableCell>
+                    <Tooltip title="Edit Integration">
+                      <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(integration)}>
+                        <EditOutlined />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Integration">
+                      <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(integration.id)}>
+                        <DeleteOutlined />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="View Details">
+                      <IconButton onClick={() => handleClickOpenDetails(integration)}>
+                        <EyeOutlined />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={10} align="center">
+                  No data available
                 </TableCell>
               </TableRow>
-            ))
+            )
           )}
         </TableBody>
       </Table>

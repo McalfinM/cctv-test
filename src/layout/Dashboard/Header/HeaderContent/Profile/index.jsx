@@ -29,7 +29,7 @@ import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
 import SettingOutlined from '@ant-design/icons/SettingOutlined';
 import UserOutlined from '@ant-design/icons/UserOutlined';
 import avatar1 from 'assets/images/users/avatar-1.png';
-import { username, token } from 'services';
+import { getToken, getUsername } from 'services';
 
 // tab panel wrapper
 function TabPanel({ children, value, index, ...other }) {
@@ -52,9 +52,7 @@ function a11yProps(index) {
 export default function Profile() {
 
   useEffect(() => {
-    if(!token){
-      window.location.href = '/login'
-    }
+    if (!getToken) window.location.href = '/login'
   }, []);
   const theme = useTheme();
 
@@ -98,7 +96,7 @@ export default function Profile() {
         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ p: 0.5 }}>
           <Avatar alt="profile user" src={avatar1} size="sm" />
           <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
-            {username}
+            {getUsername()}
           </Typography>
         </Stack>
       </ButtonBase>
@@ -131,7 +129,7 @@ export default function Profile() {
                         <Stack direction="row" spacing={1.25} alignItems="center">
                           <Avatar alt="profile user" src={avatar1} sx={{ width: 32, height: 32 }} />
                           <Stack>
-                            <Typography variant="h6">{username}</Typography>
+                            <Typography variant="h6">{getUsername()}</Typography>
                           </Stack>
                         </Stack>
                       </Grid>

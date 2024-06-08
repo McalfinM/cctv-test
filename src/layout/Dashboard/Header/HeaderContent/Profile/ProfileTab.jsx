@@ -29,6 +29,7 @@ export default function ProfileTab() {
 
   const handleLogout = () => {
     Storage.clear(navigate);
+    window.location.reload(true);
   };
 
   return (

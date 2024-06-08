@@ -27,17 +27,20 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { adminAccess, get, token, user } from 'services';
+import { get, getAdminAccess, getToken, getUser } from 'services';
+import MessageDisplay from 'components/MessageDisplay';
 
 export default function Log({ baseUrl }) {
 
   useEffect(() => {
-    if (!token) window.location.href = '/login'
+    if (!getToken()) window.location.href = '/login';
   }, []);
 
-  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'log') || adminAccess;
+  const userAccess = getUser()?.userData?.acl?.find(menu => menu?.menuName === 'log') || getAdminAccess();
 
-  const { data: logs, error, mutate } = useSWR(baseUrl + '/logs', get);
+  const { data: logs, error, mutate, isLoading } = useSWR(baseUrl + '/logs', get, {
+    revalidateOnFocus: false,
+  });
 
   const [open, setOpen] = useState(false);
   const [editingLog, setEditingLog] = useState(null);
@@ -45,16 +48,16 @@ export default function Log({ baseUrl }) {
   const [logMock, setLogMock] = useState();
 
   useEffect(() => {
-    setTimeout(() => {
-      // Mock data
-      setLogMock([
-        { id: 1, logData: 'Log 1 data' },
-        { id: 2, logData: 'Log 2 data' },
-        { id: 3, logData: 'Log 3 data' },
-        { id: 4, logData: 'Log 4 data' },
-        { id: 5, logData: 'Log 5 data' }
-      ]);
-    }, 500);
+    // setTimeout(() => {
+    //   // Mock data
+    //   setLogMock([
+    //     { id: 1, logData: 'Log 1 data' },
+    //     { id: 2, logData: 'Log 2 data' },
+    //     { id: 3, logData: 'Log 3 data' },
+    //     { id: 4, logData: 'Log 4 data' },
+    //     { id: 5, logData: 'Log 5 data' }
+    //   ]);
+    // }, 500);
     return () => { };
   }, []);
 
@@ -99,10 +102,7 @@ export default function Log({ baseUrl }) {
 
   return (
     <MainCard title="Log Management">
-      <Typography variant="body2" gutterBottom>
-        Manage your logs below. You can create, edit, or delete logs as needed. If you can't edit, delete, or create logs, it means you
-        don't have the necessary access permissions.
-      </Typography>
+      <MessageDisplay error={error} />
       <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" onClick={() => handleClickOpen(null)}>
         Create Log
       </Button>
@@ -115,7 +115,7 @@ export default function Log({ baseUrl }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!logMock ? (
+          {isLoading ? (
             <TableRow>
               <TableCell colSpan={3} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -124,20 +124,28 @@ export default function Log({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            logMock.map((log) => (
-              <TableRow key={log.id}>
-                <TableCell>{log.id}</TableCell>
-                <TableCell>{log.logData}</TableCell>
-                <TableCell>
-                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(log)}>
-                    <EditOutlined />
-                  </IconButton>
-                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(log.id)}>
-                    <DeleteOutlined />
-                  </IconButton>
+            logs?.length ? (
+              logs?.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell>{log.id}</TableCell>
+                  <TableCell>{log.logData}</TableCell>
+                  <TableCell>
+                    <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(log)}>
+                      <EditOutlined />
+                    </IconButton>
+                    <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(log.id)}>
+                      <DeleteOutlined />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={10} align="center">
+                  No data available
                 </TableCell>
               </TableRow>
-            ))
+            )
           )}
         </TableBody>
       </Table>

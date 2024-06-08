@@ -26,15 +26,17 @@ import MainCard from 'components/MainCard';
 
 // SWR for data fetching
 import useSWR from 'swr';
-import { adminAccess, get, post, token, user } from 'services';
+import { getAdminAccess, getToken, getUser, post } from 'services';
+import MessageDisplay from 'components/MessageDisplay';
 
 export default function User({ baseUrl }) {
 
   useEffect(() => {
-    if (!token) window.location.href = '/login'
+    if (!getToken()) window.location.href = '/login';
   }, []);
 
-  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'auth') || adminAccess;
+  const userAccess = getUser()?.userData?.acl?.find(menu => menu?.menuName === 'auth') || getAdminAccess();
+
 
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -42,7 +44,9 @@ export default function User({ baseUrl }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [groupId, setGroupId] = useState('');
-  const [userMock, setUserMock] = useState();
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(null);
 
   const payload = {
     page: 1,
@@ -50,20 +54,24 @@ export default function User({ baseUrl }) {
 
   };
 
-
   useEffect(() => {
+    getUsers()
+  }, []);
+
+  const getUsers = () => {
+    setLoading(true)
     post(baseUrl + '/api/employee/list', {
       page: payload.page,
       pageSize: payload.pageSize,
     })
       .then(response => {
-        console.log(response, 'ress');
-        setUserMock(response?.data ?? []);
+        setUsers(response?.data ?? []);
       })
       .catch(error => {
-        console.error('Error fetching users:', error);
-      });
-  }, []);
+        setError(error)
+      })
+      .finally(() => setLoading(false))
+  }
 
   const handleClickOpen = (user) => {
     setEditingUser(user);
@@ -98,16 +106,7 @@ export default function User({ baseUrl }) {
       });
     }
     // Refresh the data
-    post(baseUrl + '/api/employee/list', {
-      page: payload.page,
-      pageSize: payload.pageSize,
-    })
-      .then(response => {
-        setUserMock(response?.data ?? []);
-      })
-      .catch(error => {
-        console.error('Error fetching users:', error);
-      });
+    getUsers()
     handleClose();
   };
 
@@ -115,25 +114,12 @@ export default function User({ baseUrl }) {
     await fetch(baseUrl + '/users/' + id, {
       method: 'DELETE'
     });
-    // Refresh the data
-    post(baseUrl + '/api/employee/list', {
-      page: payload.page,
-      pageSize: payload.pageSize,
-    })
-      .then(response => {
-        setUserMock(response?.data ?? []);
-      })
-      .catch(error => {
-        console.error('Error fetching users:', error);
-      });
+    getUsers()
   };
 
   return (
     <MainCard title="User Management">
-      <Typography variant="body2" gutterBottom>
-        Manage your users below. You can create, edit, or delete users as needed. If you can't edit, delete, or create users, it means you
-        don't have the necessary access permissions.
-      </Typography>
+      <MessageDisplay error={error} />
       <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<UserAddOutlined />} onClick={() => handleClickOpen(null)}>
         Create User
       </Button>
@@ -147,7 +133,7 @@ export default function User({ baseUrl }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!userMock ? (
+          {loading ? (
             <TableRow>
               <TableCell colSpan={4} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -156,21 +142,29 @@ export default function User({ baseUrl }) {
               </TableCell>
             </TableRow>
           ) : (
-            userMock.map((user, index) => (
-              <TableRow key={user.id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{user.tFirstName + ' ' + user.tLastName}</TableCell>
-                <TableCell>{user.tblDepartment.tDescDepartment}</TableCell>
-                <TableCell>
-                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(user)}>
-                    <EditOutlined />
-                  </IconButton>
-                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(user.id)}>
-                    <DeleteOutlined />
-                  </IconButton>
+            users?.length ? (
+              users?.map((user, index) => (
+                <TableRow key={user.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{user.tFirstName + ' ' + user.tLastName}</TableCell>
+                  <TableCell>{user.tblDepartment.tDescDepartment}</TableCell>
+                  <TableCell>
+                    <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(user)}>
+                      <EditOutlined />
+                    </IconButton>
+                    <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(user.id)}>
+                      <DeleteOutlined />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={10} align="center">
+                  No data available
                 </TableCell>
               </TableRow>
-            ))
+            )
           )}
         </TableBody>
       </Table>
