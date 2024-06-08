@@ -20,7 +20,10 @@ import {
   Tooltip,
   MenuItem,
   Paper,
-  Grid
+  Grid,
+  Popover,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 
 import { EditOutlined, DeleteOutlined, CalendarOutlined, FilterOutlined } from '@ant-design/icons';
@@ -37,13 +40,22 @@ export default function Event({ baseUrl }) {
 
   const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'event') || adminAccess;
 
+  const { data: listEventType } = useSWR(baseUrl + '/api/filter-helper/event-type', get);
+  const { data: listPanel } = useSWR(baseUrl + '/api/filter-helper/panel', get);
+  const { data: listReader } = useSWR(baseUrl + '/api/filter-helper/reader', get);
+  const { data: listDepartment } = useSWR(baseUrl + '/api/filter-helper/department', get);
+  // const { data: listDoor } = useSWR(baseUrl + '/api/filter-helper/door', get);
+
+
   const [events, setEvents] = useState([]);
   const [open, setOpen] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [filter, setFilter] = useState('');
   const [filteredEvents, setFilteredEvents] = useState(events);
+
 
   const payload = {
     page: 1,
@@ -68,7 +80,6 @@ export default function Event({ baseUrl }) {
         to: ""
       }
     }).then(response => {
-      // console.log('Event created:', response);
       setEvents(response?.data ?? [])
     })
       .catch(error => {
@@ -106,7 +117,7 @@ export default function Event({ baseUrl }) {
         body: JSON.stringify({ name, date })
       });
     }
-    mutate(); // Refresh the data
+    mutate();
     handleClose();
   };
 
@@ -114,24 +125,38 @@ export default function Event({ baseUrl }) {
     await fetch(baseUrl + '/events/' + id, {
       method: 'DELETE'
     });
-    mutate(); // Refresh the data
+    mutate();
   };
 
 
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [filters, setFilters] = useState({
+    eventType: '',
+    panel: '',
+    reader: '',
+    department: '',
+    // door: ''
+  });
 
-  // Function to handle filter change
+  const handleFilterIconClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseFilter = () => {
+    setAnchorEl(null);
+  };
+
   const handleFilterChange = (event) => {
-    setFilter(event.target.value);
+    const { name, value } = event.target;
+    setFilters({
+      ...filters,
+      [name]: value
+    });
   };
 
-  // Function to apply the filter
-  const applyFilter = () => {
-    if (filter) {
-      setFilteredEvents(events.filter((event) => event.eventTypeString === filter));
-    } else {
-      setFilteredEvents(events);
-    }
-  };
+  const handleResetFilter = () => {
+    setShowFilter(false)
+  }
 
 
   return (
@@ -143,10 +168,124 @@ export default function Event({ baseUrl }) {
         <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
           Create Event
         </Button>
-        <IconButton>
-          <FilterOutlined />
-        </IconButton>
+
+        {!showFilter ?
+          <IconButton onClick={() => setShowFilter(!showFilter)}>
+            <FilterOutlined />
+          </IconButton>
+          :
+          <Grid item style={{ flexGrow: 1 }}>
+            <Grid container justifyContent="flex-end" alignItems="center" spacing={2}>
+              {!showFilter ? (
+                <IconButton onClick={() => setShowFilter(!showFilter)}>
+                  <FilterOutlined />
+                </IconButton>
+              ) : (
+                <>
+                  <Grid item>
+                    <FormControl fullWidth style={{ minWidth: 120 }}>
+                      <InputLabel>Event Type</InputLabel>
+                      <Select
+                        name="eventType"
+                        value={filters.eventType}
+                        onChange={handleFilterChange}
+                      >
+                        {listEventType?.map((option, idx) => (
+                          <MenuItem key={idx} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item>
+                    <FormControl fullWidth style={{ minWidth: 120 }}>
+                      <InputLabel>Panel</InputLabel>
+                      <Select
+                        name="panel"
+                        value={filters.panel}
+                        onChange={handleFilterChange}
+                      >
+                        {listPanel?.map((option, idx) => (
+                          <MenuItem key={idx} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item>
+                    <FormControl fullWidth style={{ minWidth: 120 }}>
+                      <InputLabel>Reader</InputLabel>
+                      <Select
+                        name="reader"
+                        value={filters.reader}
+                        onChange={handleFilterChange}
+                      >
+                        {listReader?.map((option, idx) => (
+                          <MenuItem key={idx} value={option.value}>
+                            {option.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item>
+                    <FormControl fullWidth style={{ minWidth: 120 }}>
+                      <InputLabel>Department</InputLabel>
+                      <Select
+                        name="department"
+                        value={filters.department}
+                        onChange={handleFilterChange}
+                      >
+                        {listDepartment?.map((option, idx) => (
+                          <MenuItem key={idx} value={option.id}>
+                            {option.text}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  <Grid item>
+                    <Button variant="contained" color="primary" onClick={handleClose}>
+                      Apply
+                    </Button>
+                  </Grid>
+                  <Grid item>
+                    <Button variant="outlined" color="error" onClick={handleResetFilter}>
+                      Reset
+                    </Button>
+                  </Grid>
+                </>
+              )}
+            </Grid>
+          </Grid>
+
+        }
       </Grid>
+      {/* <Popover
+        id='eventFilter'
+        open={showFilter}
+        onClose={() => setShowFilter(false)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        // transformOrigin={{
+        //   vertical: 'top',
+        //   horizontal: 'right',
+        // }}
+      >
+        <Grid container spacing={2} style={{ padding: '16px', maxWidth: '300px' }}>
+         
+          <Grid item xs={12} style={{ textAlign: 'center' }}>
+            <Button variant="contained" color="primary" onClick={handleClose}>
+              Apply Filters
+            </Button>
+          </Grid>
+        </Grid>
+      </Popover> */}
 
       <Table>
         <TableHead>
