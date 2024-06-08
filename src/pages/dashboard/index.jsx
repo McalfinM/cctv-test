@@ -1,36 +1,34 @@
-// material-ui
-import Grid from '@mui/material/Grid';
-
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import { useState, useEffect } from 'react';
+import { Grid, Typography, Box, Stack, Snackbar, Alert } from '@mui/material';
+import io from 'socket.io-client';
+import useSWR from 'swr';
+import { useNavigate } from 'react-router';
 
 // project import
 import MainCard from 'components/MainCard';
 import AnalyticEcommerce from 'components/cards/statistics/AnalyticEcommerce';
 import MonthlyBarChart from './MonthlyBarChart';
 import UniqueVisitorCard from './UniqueVisitorCard';
-import { useNavigate } from 'react-router';
 import { get, getToken } from 'services';
-import { useEffect } from 'react';
-import useSWR from 'swr';
-
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
 export default function Dashboard({ baseUrl }) {
-
   const { data, isLoading } = useSWR(baseUrl + '/api/auth/me', get);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!getToken) window.location.href = '/login'
-  }, []);
+    if (!getToken()) navigate('/login');
+  }, [navigate]);
+
 
 
   useEffect(() => {
     if (!isLoading && data && !data.profile?.id) {
-      window.location.href = '/login';
+      navigate('/login');
     }
-  }, [isLoading, data]);
+  }, [isLoading, data, navigate]);
+
+ 
 
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>
@@ -38,6 +36,7 @@ export default function Dashboard({ baseUrl }) {
       <Grid item xs={12} sx={{ mb: -2.25 }}>
         <Typography variant="h5">Dashboard</Typography>
       </Grid>
+    
       <Grid item xs={12} sm={6} md={4} lg={3}>
         <AnalyticEcommerce title="Total Page Views" count="4,42,236" percentage={59.3} extra="35,000" />
       </Grid>
