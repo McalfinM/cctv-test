@@ -14,29 +14,37 @@ import {
   TextField,
   Typography,
   CircularProgress,
-  Box
+  Box,
+  Toolbar,
+  Select,
+  Tooltip,
+  MenuItem,
+  Paper,
+  Grid
 } from '@mui/material';
-import { EditOutlined, DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
+
+import { EditOutlined, DeleteOutlined, CalendarOutlined, FilterOutlined } from '@ant-design/icons';
 import MainCard from 'components/MainCard';
 import useSWR from 'swr';
-import Storage from 'utils/storage';
-import { checkMe, get, post, token } from 'services';
+import { } from 'utils/storage';
+import { adminAccess, checkMe, get, post, token, user } from 'services';
 import { useNavigate } from 'react-router';
-
 export default function Event({ baseUrl }) {
 
   useEffect(() => {
-    if(!token){
-      window.location.href = '/login'
-    }
+    if (!token) window.location.href = '/login'
   }, []);
+
+  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'event') || adminAccess;
+
   const [events, setEvents] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
-  const [userAccess, setUserAccess] = useState(null);
-  const user = Storage.get('user');
+  const [filter, setFilter] = useState('');
+  const [filteredEvents, setFilteredEvents] = useState(events);
+
   const payload = {
     page: 1,
     pageSize: 10,
@@ -50,38 +58,23 @@ export default function Event({ baseUrl }) {
   };
 
   useEffect(() => {
-    const me = checkMe()
-    console.log(me, 'meee')
-    post(baseUrl + '/api/event/list', { page: payload.page, pageSize: payload.pageSize,  
+    post(baseUrl + '/api/event/list', {
+      page: payload.page, pageSize: payload.pageSize,
       iEventType: 97, // Opsional
       IdPanel: 0, // Opsional
       IdDoor: 0, // Opsional
       date: { // Opsional
-      from: "",
-      to: ""
-    } })
-      .then(response => {
-        console.log('Event created:', response);
-        setEvents(response?.data ?? [])
-      })
+        from: "",
+        to: ""
+      }
+    }).then(response => {
+      // console.log('Event created:', response);
+      setEvents(response?.data ?? [])
+    })
       .catch(error => {
-        console.log('Error creating event:', error);
+        // console.log('Error creating event:', error);
       });
   }, [])
-
-
-  useEffect(() => {
-    if (user?.userData?.acl?.length === 0) {
-      setUserAccess({ canCreate: true, canEdit: true, canDelete: true });
-      console.log('superadmin')
-    } else if (user?.userData?.acl?.length) {
-      console.log('admin')
-
-      const access = user.userData.acl.find(menu => menu.menuName === 'event');
-      setUserAccess(access);
-    }
-  }, []); // Empty dependency array ensures the effect runs only once
-
 
   const handleClickOpen = (event) => {
     setEditingEvent(event);
@@ -124,16 +117,37 @@ export default function Event({ baseUrl }) {
     mutate(); // Refresh the data
   };
 
+
+
+  // Function to handle filter change
+  const handleFilterChange = (event) => {
+    setFilter(event.target.value);
+  };
+
+  // Function to apply the filter
+  const applyFilter = () => {
+    if (filter) {
+      setFilteredEvents(events.filter((event) => event.eventTypeString === filter));
+    } else {
+      setFilteredEvents(events);
+    }
+  };
+
+
   return (
     <MainCard title="Event Management">
       <Typography variant="body2" gutterBottom>
         Manage your events below. You can create, edit, or delete events as needed. If you can't edit, delete, or create events, it means you don't have the necessary access permissions.
       </Typography>
-      {(userAccess?.canCreate || userAccess?.canEdit || userAccess?.canDelete) && (
-        <Button variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
+      <Grid container justifyContent="space-between" alignItems="center" mb={2}>
+        <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<CalendarOutlined />} onClick={() => handleClickOpen(null)}>
           Create Event
         </Button>
-      )}
+        <IconButton>
+          <FilterOutlined />
+        </IconButton>
+      </Grid>
+
       <Table>
         <TableHead>
           <TableRow>
@@ -144,7 +158,7 @@ export default function Event({ baseUrl }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!events && !userAccess ? (
+          {!events ? (
             <TableRow>
               <TableCell colSpan={4} align="center">
                 <Box display="flex" justifyContent="center" padding={5}>
@@ -154,21 +168,17 @@ export default function Event({ baseUrl }) {
             </TableRow>
           ) : (
             events.map((event, index) => (
-              <TableRow key={event.id}>
+              <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>{event.eventTypeString}</TableCell>
                 <TableCell>{event.IdPanel}</TableCell>
                 <TableCell>
-                  {(userAccess?.canEdit || userAccess?.canDelete) && (
-                    <>
-                      <IconButton onClick={() => handleClickOpen(event)}>
-                        <EditOutlined />
-                      </IconButton>
-                      <IconButton onClick={() => handleDelete(event.id)}>
-                        <DeleteOutlined />
-                      </IconButton>
-                    </>
-                  )}
+                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(event)}>
+                    <EditOutlined />
+                  </IconButton>
+                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(event.id)}>
+                    <DeleteOutlined />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))

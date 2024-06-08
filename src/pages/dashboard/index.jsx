@@ -11,18 +11,22 @@ import AnalyticEcommerce from 'components/cards/statistics/AnalyticEcommerce';
 import MonthlyBarChart from './MonthlyBarChart';
 import UniqueVisitorCard from './UniqueVisitorCard';
 import { useNavigate } from 'react-router';
-import { token } from 'services';
+import { get, token } from 'services';
 import { useEffect } from 'react';
+import useSWR from 'swr';
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
-export default function Dashboard() {
+export default function Dashboard({ baseUrl }) {
+
+  const { data: logs, error, mutate, } = useSWR(baseUrl + '/api/auth/me', get);
 
   useEffect(() => {
-    if(!token){
-      window.location.href = '/login'
-    }
-  }, []);
+    if (!token) window.location.href = '/login'
+  }, [logs]);
+
+
+
   return (
     <Grid container rowSpacing={4.5} columnSpacing={2.75}>
       {/* row 1 */}

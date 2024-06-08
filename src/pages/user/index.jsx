@@ -26,15 +26,16 @@ import MainCard from 'components/MainCard';
 
 // SWR for data fetching
 import useSWR from 'swr';
-import { get, post, token } from 'services';
+import { adminAccess, get, post, token, user } from 'services';
 
 export default function User({ baseUrl }) {
 
   useEffect(() => {
-    if(!token){
-      window.location.href = '/login'
-    }
+    if (!token) window.location.href = '/login'
   }, []);
+
+  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'auth') || adminAccess;
+
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [username, setUsername] = useState('');
@@ -46,9 +47,9 @@ export default function User({ baseUrl }) {
   const payload = {
     page: 1,
     pageSize: 10,
-    
+
   };
-  
+
 
   useEffect(() => {
     post(baseUrl + '/api/employee/list', {
@@ -133,7 +134,7 @@ export default function User({ baseUrl }) {
         Manage your users below. You can create, edit, or delete users as needed. If you can't edit, delete, or create users, it means you
         don't have the necessary access permissions.
       </Typography>
-      <Button variant="contained" color="primary" startIcon={<UserAddOutlined />} onClick={() => handleClickOpen(null)}>
+      <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<UserAddOutlined />} onClick={() => handleClickOpen(null)}>
         Create User
       </Button>
       <Table>
@@ -161,10 +162,10 @@ export default function User({ baseUrl }) {
                 <TableCell>{user.tFirstName + ' ' + user.tLastName}</TableCell>
                 <TableCell>{user.tblDepartment.tDescDepartment}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleClickOpen(user)}>
+                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(user)}>
                     <EditOutlined />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(user.id)}>
+                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(user.id)}>
                     <DeleteOutlined />
                   </IconButton>
                 </TableCell>

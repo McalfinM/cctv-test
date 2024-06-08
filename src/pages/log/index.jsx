@@ -27,9 +27,16 @@ import MainCard from 'components/MainCard';
 // SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { get } from 'services';
+import { adminAccess, get, token, user } from 'services';
 
 export default function Log({ baseUrl }) {
+
+  useEffect(() => {
+    if (!token) window.location.href = '/login'
+  }, []);
+
+  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'log') || adminAccess;
+
   const { data: logs, error, mutate } = useSWR(baseUrl + '/logs', get);
 
   const [open, setOpen] = useState(false);
@@ -48,7 +55,7 @@ export default function Log({ baseUrl }) {
         { id: 5, logData: 'Log 5 data' }
       ]);
     }, 500);
-    return () => {};
+    return () => { };
   }, []);
 
   const handleClickOpen = (log) => {
@@ -96,7 +103,7 @@ export default function Log({ baseUrl }) {
         Manage your logs below. You can create, edit, or delete logs as needed. If you can't edit, delete, or create logs, it means you
         don't have the necessary access permissions.
       </Typography>
-      <Button variant="contained" color="primary" onClick={() => handleClickOpen(null)}>
+      <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" onClick={() => handleClickOpen(null)}>
         Create Log
       </Button>
       <Table>
@@ -122,10 +129,10 @@ export default function Log({ baseUrl }) {
                 <TableCell>{log.id}</TableCell>
                 <TableCell>{log.logData}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleClickOpen(log)}>
+                  <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(log)}>
                     <EditOutlined />
                   </IconButton>
-                  <IconButton onClick={() => handleDelete(log.id)}>
+                  <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(log.id)}>
                     <DeleteOutlined />
                   </IconButton>
                 </TableCell>

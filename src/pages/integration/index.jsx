@@ -20,28 +20,21 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-
-// ant-design icons
 import { EditOutlined, DeleteOutlined, ApiOutlined, EyeOutlined } from '@ant-design/icons';
-
-// project import
 import MainCard from 'components/MainCard';
-
-// SWR for data fetching
 import useSWR from 'swr';
 import { useEffect } from 'react';
-import { get, post, token } from 'services';
+import { adminAccess, get, post, token, user } from 'services';
 import StreamPage from './video';
 import VideoFeed from './vidsec';
-import { useNavigate } from 'react-router';
 
 export default function Integration({ baseUrl }) {
- 
+
   useEffect(() => {
-    if(!token){
-      window.location.href = '/login'
-    }
+    if (!token) window.location.href = '/login'
   }, []);
+
+  const userAccess = user?.userData?.acl?.find(menu => menu?.menuName === 'integration') || adminAccess;
   const { data: integration, error, mutate } = useSWR(baseUrl + '/api/integration/list', post);
 
   const [open, setOpen] = useState(false);
@@ -64,7 +57,7 @@ export default function Integration({ baseUrl }) {
   const handleClickOpen = async (integration) => {
     if (integration) {
       const details = await fetchIntegrationDetails(integration.id);
-      
+
       if (details) {
         setEditingIntegration(details);
         setCameraName(details.cameraName);
@@ -99,7 +92,7 @@ export default function Integration({ baseUrl }) {
       }
     } else {
       setSelectedIntegration(integration);
-    
+
     }
     setOpenDetails(true);
   };
@@ -163,19 +156,19 @@ export default function Integration({ baseUrl }) {
 
   return (
     <MainCard title="Integration Management">
-       {
-        error?.message ? ( 
-        <>
-        <Alert severity="error">
-          {error.message}
-        </Alert>
-        </> 
+      {
+        error?.message ? (
+          <>
+            <Alert style={{ marginBottom: 10 }} severity="error">
+              {error.message}
+            </Alert>
+          </>
         ) : (<></>)
       }
-      <Button variant="contained" color="primary" startIcon={<ApiOutlined />} onClick={() => handleClickOpen(null)}>
+      <Button disabled={!userAccess?.canCreate} variant="contained" color="primary" startIcon={<ApiOutlined />} onClick={() => handleClickOpen(null)}>
         Create Integration
       </Button>
-    
+
       <Table>
         <TableHead>
           <TableRow>
@@ -204,12 +197,12 @@ export default function Integration({ baseUrl }) {
                 <TableCell>{integration.panelId}</TableCell>
                 <TableCell>
                   <Tooltip title="Edit Integration">
-                    <IconButton onClick={() => handleClickOpen(integration)}>
+                    <IconButton disabled={!userAccess?.canEdit} onClick={() => handleClickOpen(integration)}>
                       <EditOutlined />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Delete Integration">
-                    <IconButton onClick={() => handleDelete(integration.id)}>
+                    <IconButton disabled={!userAccess?.canDelete} onClick={() => handleDelete(integration.id)}>
                       <DeleteOutlined />
                     </IconButton>
                   </Tooltip>
@@ -266,8 +259,8 @@ export default function Integration({ baseUrl }) {
                 <strong>Video Preview:</strong>
               </Typography>
               <Box mt={2}>
-              <VideoFeed src={selectedIntegration.rtspURL} />
-              {/* <StreamPage/> */}
+                <VideoFeed src={selectedIntegration.rtspURL} />
+                {/* <StreamPage/> */}
               </Box>
             </>
           )}

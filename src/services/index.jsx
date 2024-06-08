@@ -1,8 +1,10 @@
 import { baseUrl } from "routes/MainRoutes";
+import Storage from "utils/storage";
 
-export const user = localStorage.getItem('user');
-export const token = user ? JSON.parse(user)?.token : '';
-export const myusername = user ? JSON.parse(user)?.userData?.username : '';
+export const user = Storage.get('user');
+export const adminAccess = { canEdit: true, canCreate: true, canDelete: true };
+export const token = Storage.token()
+export const username = user?.userData?.username || ''
 
 
 const get = async (url) => {
@@ -42,7 +44,6 @@ const get = async (url) => {
 // };
 
 const post = async (url, data) => {
-  
   const headers = {
     Authorization: `Bearer ${token}`
   };
@@ -59,7 +60,7 @@ const post = async (url, data) => {
 
   const response = await fetch(url, options);
 
-  console.log(response.ok ,'okee')
+  console.log(response.ok, 'okee')
   if (!response.ok) {
     const message = await response.json();
     console.error('Error response:', message);
@@ -73,8 +74,7 @@ const post = async (url, data) => {
 export const checkMe = async () => {
   return await fetch(baseUrl + '/api/auth/me', {
     headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`
     }
   });
 }

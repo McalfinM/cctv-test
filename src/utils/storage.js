@@ -70,8 +70,13 @@ const decryptJson = async (encryptedData, iv, dd) => {
 const get = (name) => {
     let data = localStorage.getItem(name);
     if (data?.length) return JSON.parse(data)
-    else return undefined
+    else return ''
 };
+
+const token = () => {
+  return get('user')?.token || ''
+};
+
 const set = (name, data) => {
    localStorage.setItem(name, JSON.stringify(data));
 };
@@ -81,12 +86,12 @@ const clear = (navigate) => {
     if (navigate) navigate('/login');
 };
 
-
 const Storage = {
     set,
     get,
     clear,
-    generateKey
+    generateKey, 
+    token
 };
 
 export default Storage;
