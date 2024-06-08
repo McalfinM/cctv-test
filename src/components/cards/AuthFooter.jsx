@@ -15,7 +15,7 @@ export default function AuthFooter() {
         spacing={2}
         textAlign={{ xs: 'center', sm: 'inherit' }}
       >
-        <Typography variant="subtitle2" color="secondary">
+        {/* <Typography variant="subtitle2" color="secondary">
           This site is protected by{' '}
           <Typography component={Link} variant="subtitle2" href="#mantis-privacy" target="_blank" underline="hover">
             Privacy Policy
@@ -53,7 +53,7 @@ export default function AuthFooter() {
           >
             CA Privacy Notice
           </Typography>
-        </Stack>
+        </Stack> */}
       </Stack>
     </Container>
   );
